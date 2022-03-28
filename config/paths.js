@@ -1,5 +1,5 @@
-'use strict';
-
+'use strict'
+const glob = require('glob');
 const path = require('path');
 const fs = require('fs');
 const getPublicUrlOrPath = require('react-dev-utils/getPublicUrlOrPath');
@@ -50,6 +50,32 @@ const resolveModule = (resolveFn, filePath) => {
   return resolveFn(`${filePath}.js`);
 };
 
+// 获取指定路径下的入口文件
+function getEntries(globPath) {
+  const files = glob.sync(globPath),
+    entries = {};
+  files.forEach(function (filepath) {
+    const split = filepath.split('/');
+    const name = split[split.length - 2];
+    entries[name] = './' + filepath;
+  });
+  return entries;
+}
+const entries = getEntries('src/pages/**/index.tsx')
+
+function getIndexJs() {
+  const indexJsList = [];
+  Object.keys(entries).forEach((name) => {
+    const indexjs = resolveModule(resolveApp, `src/pages/${name}/index`)
+    indexJsList.push({
+      name,
+      path: indexjs
+    });
+  })
+  return indexJsList;
+}
+const indexJsList = getIndexJs();
+
 // config after eject: we're in ./config/
 module.exports = {
   dotenv: resolveApp('.env'),
@@ -57,7 +83,8 @@ module.exports = {
   appBuild: resolveApp(buildPath),
   appPublic: resolveApp('public'),
   appHtml: resolveApp('public/index.html'),
-  appIndexJs: resolveModule(resolveApp, 'src/index'),
+  // appIndexJs: resolveModule(resolveApp, 'src/index'),
+  appIndexJs: indexJsList,
   appPackageJson: resolveApp('package.json'),
   appSrc: resolveApp('src'),
   appTsConfig: resolveApp('tsconfig.json'),
@@ -70,6 +97,7 @@ module.exports = {
   appTsBuildInfoFile: resolveApp('node_modules/.cache/tsconfig.tsbuildinfo'),
   swSrc: resolveModule(resolveApp, 'src/service-worker'),
   publicUrlOrPath,
+  entries // 添加入口对象
 };
 
 
